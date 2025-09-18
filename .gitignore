@@ -2,7 +2,6 @@
 tmp
 
 *.ini
-*.csv
 
 # Skip the db files stored for backup
 *.bkup

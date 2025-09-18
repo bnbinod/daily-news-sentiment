@@ -10,32 +10,39 @@ class SentimentAnalyzer:
         self.lm_negative = None
         self.initialized = False
 
-    async def initialize(self):
-        """Initialize LM dictionaries asynchronously"""
+    def initialize(self):
+        """Initialize LM dictionaries from local CSV file"""
         if self.initialized:
             return
 
-        async with aiohttp.ClientSession() as session:
-            # Load positive words
-            async with session.get(
-                    "https://raw.githubusercontent.com/okcredit/loughran-mcdonald/master/positive.csv") as resp:
-                pos_data = await resp.text()
-                self.lm_positive = set(pd.read_csv(pd.compat.StringIO(pos_data))['word'].str.lower().tolist())
+        try:
+            # Load the local CSV file
+            lm_df = pd.read_csv('instance/LM-SA-2020.csv')
 
-            # Load negative words
-            async with session.get(
-                    "https://raw.githubusercontent.com/okcredit/loughran-mcdonald/master/negative.csv") as resp:
-                neg_data = await resp.text()
-                self.lm_negative = set(pd.read_csv(pd.compat.StringIO(neg_data))['word'].str.lower().tolist())
+            # Filter for positive and negative words
+            positive_words = lm_df[lm_df['sentiment'] == 'Positive']['word'].str.lower().tolist()
+            negative_words = lm_df[lm_df['sentiment'] == 'Negative']['word'].str.lower().tolist()
 
-        self.initialized = True
+            # Convert to sets for faster lookup
+            self.lm_positive = set(positive_words)
+            self.lm_negative = set(negative_words)
+
+            self.initialized = True
+            print(f"Loaded {len(self.lm_positive)} positive words and {len(self.lm_negative)} negative words")
+
+        except FileNotFoundError:
+            print("Error: LM-SA-2020.csv file not found. Please ensure the file is in the same directory.")
+            raise
+        except Exception as e:
+            print(f"Error loading sentiment dictionary: {e}")
+            raise
 
     def preprocess(self, text):
         """Clean and tokenize text"""
         if not text or pd.isna(text):
             return []
         text = text.lower()
-        text = re.sub(r'[^a-z\s]', '', text)
+        text = re.sub(r'[^a-z\s]', '', text)  # Remove punctuation, keep letters and spaces
         return text.split()
 
     def calculate_sentiment(self, text):
