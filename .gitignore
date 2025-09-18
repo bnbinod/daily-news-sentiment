@@ -1,0 +1,14 @@
+.idea
+tmp
+
+*.ini
+*.csv
+
+# Skip the db files stored for backup
+*.bkup
+
+# database & logs
+#*.db
+#*.sqlite3
+*.log
+

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Financial Sentiment Dashboard</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .dashboard { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+        .chart { border: 1px solid #ddd; padding: 20px; border-radius: 8px; }
+        .stats { background: #f5f5f5; padding: 20px; border-radius: 8px; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Financial Sentiment Dashboard</h1>
+
+    <div class="dashboard">
+        <div class="chart" id="sentimentChart"></div>
+        <div class="stats" id="statsPanel">
+            <h3>System Stats</h3>
+            <div id="statsContent">Loading...</div>
+            <button onclick="fetchNews()">Fetch News Now</button>
+            <button onclick="refreshData()">Refresh Chart</button>
+        </div>
+    </div>
+
+    <script>
+        async function loadChart() {
+            const response = await fetch('api/dashboard-plot?days=30');
+            const plotJson = await response.json();
+            Plotly.newPlot('sentimentChart', plotJson.data, plotJson.layout);
+        }
+
+        async function loadStats() {
+            const response = await fetch('api/stats');
+            const stats = await response.json();
+            document.getElementById('statsContent').innerHTML = `
+                <p>Total Articles: ${stats.total_articles}</p>
+                <p>Latest Update: ${stats.latest_update || 'None'}</p>
+                <p>Avg Title Score: ${stats.average_title_score?.toFixed(3) || 'N/A'}</p>
+                <p>Avg Summary Score: ${stats.average_summary_score?.toFixed(3) || 'N/A'}</p>
+            `;
+        }
+
+        async function fetchNews() {
+            await fetch('api/fetch-news', {method: 'POST'});
+            alert('News fetch started. Check back in a few minutes.');
+        }
+
+        async function refreshData() {
+            await loadChart();
+            await loadStats();
+        }
+
+        // Initial load
+        loadChart();
+        loadStats();
+
+        // Auto-refresh every 5 minutes
+        setInterval(refreshData, 300000);
+    </script>
+</body>
+</html>
